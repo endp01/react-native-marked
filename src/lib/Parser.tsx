@@ -6,6 +6,7 @@ import type { MarkedStyles } from "../theme/types";
 import type { RendererInterface, ParserOptions, Token } from "./types";
 import { getValidURL } from "./../utils/url";
 import { getTableColAlignmentStyle } from "./../utils/table";
+import React from "react";
 
 class Parser {
 	private renderer: RendererInterface;
@@ -31,12 +32,20 @@ class Parser {
 		return this._parse(tokens);
 	}
 
-	private _parse(tokens: Token[], styles?: ViewStyle | TextStyle | ImageStyle) {
-		const elements: ReactNode[] = tokens.map((token) => {
-			return this._parseToken(token, styles);
-		});
-		return elements.filter((element) => element !== null);
-	}
+    private _parse(tokens: Token[], styles?: ViewStyle | TextStyle | ImageStyle) {
+        const elements: ReactNode[] = tokens.map((token, index) => {
+            const element = this._parseToken(token, styles);
+            
+            // Ensure that the element has a unique key
+            if (React.isValidElement(element)) {
+                return React.cloneElement(element, { key: `token-${index}` });
+            }
+            
+            return element;
+        });
+
+        return elements.filter((element) => element !== null);
+    }
 
 	private _parseToken(
 		token: Token,
@@ -77,7 +86,7 @@ class Parser {
 				return this.renderer.hr(this.styles.hr);
 			}
 			case "list": {
-				let startIndex = Number.parseInt(token.start.toString());
+				let startIndex = parseInt(token.start.toString());
 				if (Number.isNaN(startIndex)) {
 					startIndex = 1;
 				}
